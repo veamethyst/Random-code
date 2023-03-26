@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import time
+import smtplib
+
+# URL de la página web que se va a escrapear
+url = 'https://ejemplo.com/citas'
+
+# Cantidad de segundos para esperar entre cada búsqueda de disponibilidad
+espera = 60
+
+# Definir una función para enviar correos electrónicos
+def enviar_correo(mensaje):
+    # Configurar los datos del servidor de correo electrónico y el remitente
+    servidor = smtplib.SMTP('smtp.gmail.com', 587)
+    servidor.starttls()
+    servidor.login('tucorreo@gmail.com', 'tupassword')
+    remitente = 'tucorreo@gmail.com'
+
+    # Configurar los destinatarios del correo electrónico
+    destinatarios = ['destinatario1@gmail.com', 'destinatario2@gmail.com']
+
+    # Crear el mensaje del correo electrónico
+    mensaje = f'Se encontró disponibilidad de citas: {mensaje}'
+    encabezado = f'Para: {", ".join(destinatarios)}\nDe: {remitente}\nAsunto: Disponibilidad de citas'
+    mensaje_correo = encabezado + '\n\n' + mensaje
+
+    # Enviar el correo electrónico
+    servidor.sendmail(remitente, destinatarios, mensaje_correo)
+    servidor.quit()
+
+# Realizar la búsqueda de disponibilidad de citas
+while True:
+    # Realizar una solicitud GET a la página web y analizar el contenido con BeautifulSoup
+    respuesta = requests.get(url)
+    soup = BeautifulSoup(respuesta.content, 'html.parser')
+
+    # Buscar la información relevante en la página web
+    disponibilidad = soup.find('div', {'class': 'disponibilidad-citas'}).text.strip()
+
+    # Si se encuentra disponibilidad, enviar una notificación por correo electrónico
+    if disponibilidad != 'No hay citas disponibles':
+        enviar_correo(disponibilidad)
+    
+    # Esperar antes de volver a buscar disponibilidad
+    time.sleep(espera)
